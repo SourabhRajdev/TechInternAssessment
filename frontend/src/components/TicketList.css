@@ -1,0 +1,281 @@
+.ticket-list-container {
+  background: white;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+}
+
+.no-tickets {
+  text-align: center;
+  padding: 40px;
+  color: #7f8c8d;
+  font-size: 16px;
+}
+
+.ticket-list {
+  display: grid;
+  gap: 16px;
+}
+
+.ticket-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ticket-card:hover {
+  border-color: #3498db;
+  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
+}
+
+.ticket-card.selected {
+  border-color: #3498db;
+  background-color: #f8fbff;
+}
+
+.ticket-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 12px;
+}
+
+.ticket-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0;
+  flex: 1;
+}
+
+.ticket-id {
+  color: #7f8c8d;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.ticket-description {
+  color: #555;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.ticket-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.priority-low {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.priority-medium {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.priority-high {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.priority-critical {
+  background-color: #721c24;
+  color: white;
+}
+
+.category {
+  background-color: #e7f3ff;
+  color: #0066cc;
+}
+
+.status-open {
+  background-color: #cfe2ff;
+  color: #084298;
+}
+
+.status-in-progress {
+  background-color: #fff3cd;
+  color: #664d03;
+}
+
+.status-resolved {
+  background-color: #d1e7dd;
+  color: #0f5132;
+}
+
+.status-closed {
+  background-color: #e2e3e5;
+  color: #41464b;
+}
+
+.ticket-footer {
+  border-top: 1px solid #f0f0f0;
+  padding-top: 8px;
+  margin-top: 8px;
+}
+
+.ticket-date {
+  color: #7f8c8d;
+  font-size: 13px;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 8px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #2c3e50;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 32px;
+  color: #7f8c8d;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-button:hover {
+  color: #2c3e50;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.modal-body h4 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  color: #2c3e50;
+}
+
+.modal-body p {
+  color: #555;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.status-selector label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #2c3e50;
+}
+
+.status-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.status-button {
+  padding: 10px 16px;
+  border: 2px solid;
+  border-radius: 6px;
+  font-weight: 600;
+  text-transform: capitalize;
+  transition: all 0.2s;
+}
+
+.status-button.status-open {
+  border-color: #0d6efd;
+  color: #0d6efd;
+  background: white;
+}
+
+.status-button.status-open:hover:not(:disabled) {
+  background: #0d6efd;
+  color: white;
+}
+
+.status-button.status-in-progress {
+  border-color: #ffc107;
+  color: #856404;
+  background: white;
+}
+
+.status-button.status-in-progress:hover:not(:disabled) {
+  background: #ffc107;
+  color: white;
+}
+
+.status-button.status-resolved {
+  border-color: #198754;
+  color: #198754;
+  background: white;
+}
+
+.status-button.status-resolved:hover:not(:disabled) {
+  background: #198754;
+  color: white;
+}
+
+.status-button.status-closed {
+  border-color: #6c757d;
+  color: #6c757d;
+  background: white;
+}
+
+.status-button.status-closed:hover:not(:disabled) {
+  background: #6c757d;
+  color: white;
+}
+
+.status-button.active {
+  opacity: 0.6;
+}
+
+.status-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}

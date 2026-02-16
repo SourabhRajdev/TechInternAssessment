@@ -1,0 +1,45 @@
+.app-header {
+  text-align: center;
+  padding: 40px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 8px;
+  margin-bottom: 30px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.app-header h1 {
+  margin: 0 0 10px 0;
+  font-size: 36px;
+  color: white;
+}
+
+.app-header p {
+  margin: 0;
+  font-size: 16px;
+  opacity: 0.95;
+}
+
+.loading-screen {
+  text-align: center;
+  padding: 100px 20px;
+}
+
+.loading-screen h1 {
+  margin-bottom: 20px;
+}
+
+.loading-screen p {
+  color: #7f8c8d;
+  font-size: 18px;
+}
+
+.error-banner {
+  background-color: #fee;
+  color: #c33;
+  padding: 16px;
+  border-radius: 8px;
+  border-left: 4px solid #e74c3c;
+  margin-bottom: 30px;
+  font-weight: 500;
+}
