@@ -25,7 +25,11 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql://ticketuser:ticketpass@db:5432/ticketdb
+      POSTGRES_DB: ticketdb
+      POSTGRES_USER: ticketuser
+      POSTGRES_PASSWORD: ticketpass
+      DB_HOST: db
+      DB_PORT: 5432
       GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
       DEBUG: "True"
     depends_on:

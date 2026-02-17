@@ -98,6 +98,20 @@ class Ticket(models.Model):
             models.Index(fields=['status', 'priority']),
             models.Index(fields=['category']),
         ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(category__in=['billing', 'technical', 'account', 'general']),
+                name='valid_category'
+            ),
+            models.CheckConstraint(
+                check=models.Q(priority__in=['low', 'medium', 'high', 'critical']),
+                name='valid_priority'
+            ),
+            models.CheckConstraint(
+                check=models.Q(status__in=['open', 'in_progress', 'resolved', 'closed']),
+                name='valid_status'
+            ),
+        ]
     
     def __str__(self):
         return f"Ticket #{self.pk}: {self.title}"

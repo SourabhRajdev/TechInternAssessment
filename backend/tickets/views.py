@@ -21,10 +21,17 @@ from .llm_service import get_llm_service
 logger = logging.getLogger(__name__)
 
 
-@api_view(['POST'])
-def create_ticket(request):
+@api_view(['GET', 'POST'])
+def list_tickets(request):
     """
-    Create a new support ticket.
+    List all tickets or create a new ticket.
+    
+    GET /api/tickets/
+    Query params:
+        - category: Filter by category
+        - priority: Filter by priority
+        - status: Filter by status
+        - search: Search in title and description
     
     POST /api/tickets/
     Body: {
@@ -34,34 +41,22 @@ def create_ticket(request):
         "priority": "low|medium|high|critical (required)"
     }
     
-    Returns: 201 with created ticket data
-    """
-    serializer = TicketSerializer(data=request.data)
-    
-    if serializer.is_valid():
-        ticket = serializer.save()
-        logger.info(f"Created ticket #{ticket.id}: {ticket.title}")
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
-    logger.warning(f"Ticket creation failed: {serializer.errors}")
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['GET'])
-def list_tickets(request):
-    """
-    List all tickets with optional filtering.
-    
-    GET /api/tickets/
-    Query params:
-        - category: Filter by category
-        - priority: Filter by priority
-        - status: Filter by status
-        - search: Search in title and description
-    
     All filters can be combined.
     Returns tickets ordered by created_at (newest first).
     """
+    if request.method == 'POST':
+        # Create ticket
+        serializer = TicketSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            ticket = serializer.save()
+            logger.info(f"Created ticket #{ticket.id}: {ticket.title}")
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
+        logger.warning(f"Ticket creation failed: {serializer.errors}")
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    # GET - List tickets
     queryset = Ticket.objects.all()
     
     # Apply filters

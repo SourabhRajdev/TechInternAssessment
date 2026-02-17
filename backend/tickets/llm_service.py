@@ -7,6 +7,7 @@ Design decisions:
 - Returns None on failure to allow ticket submission without classification
 - Validates LLM output against allowed enums
 - Logs all errors for monitoring
+- Lazy imports to avoid startup errors
 """
 import json
 import logging
@@ -14,14 +15,6 @@ from typing import Optional, Dict
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
-
-# Lazy import to avoid startup errors if google-generativeai not installed
-try:
-    import google.generativeai as genai
-    GEMINI_AVAILABLE = True
-except ImportError:
-    GEMINI_AVAILABLE = False
-    logger.warning("Google Generative AI library not available. LLM classification will be disabled.")
 
 
 # System prompt for Gemini - designed for reliable structured output
@@ -54,28 +47,44 @@ class LLMClassificationService:
     """
     Service for classifying tickets using LLM.
     Implements graceful degradation and error handling.
+    Uses lazy loading to avoid import errors at startup.
     """
     
     def __init__(self):
         self.model = None
         self.enabled = False
+        self.genai = None
+        self._initialization_attempted = False
         
-        if not GEMINI_AVAILABLE:
-            logger.warning("Google Generative AI library not available")
-            return
+    def _lazy_init(self):
+        """Lazy initialization of Gemini - only called when actually needed."""
+        if self._initialization_attempted:
+            return self.enabled
+            
+        self._initialization_attempted = True
+        
+        # Try to import google.generativeai only when needed
+        try:
+            import google.generativeai as genai
+            self.genai = genai
+        except (ImportError, TypeError) as e:
+            logger.warning(f"Google Generative AI library not available: {e}. LLM classification disabled.")
+            return False
         
         api_key = settings.GOOGLE_API_KEY
         if not api_key:
             logger.warning("GOOGLE_API_KEY not configured. LLM classification disabled.")
-            return
+            return False
         
         try:
-            genai.configure(api_key=api_key)
-            self.model = genai.GenerativeModel('gemini-pro')
+            self.genai.configure(api_key=api_key)
+            self.model = self.genai.GenerativeModel('gemini-pro')
             self.enabled = True
             logger.info("LLM classification service initialized successfully with Gemini")
+            return True
         except Exception as e:
             logger.error(f"Failed to initialize Gemini client: {e}")
+            return False
     
     def classify_ticket(self, description: str) -> Optional[Dict[str, str]]:
         """
@@ -87,6 +96,10 @@ class LLMClassificationService:
         Returns:
             Dict with 'suggested_category' and 'suggested_priority', or None on failure
         """
+        # Lazy initialization on first use
+        if not self._initialization_attempted:
+            self._lazy_init()
+            
         if not self.enabled or not self.model:
             logger.info("LLM classification not enabled")
             return None

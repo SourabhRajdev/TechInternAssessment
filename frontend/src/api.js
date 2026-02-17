@@ -62,7 +62,7 @@ export async function fetchTickets(filters = {}) {
  * Create a new ticket.
  */
 export async function createTicket(ticketData) {
-  return apiFetch('/api/tickets/create/', {
+  return apiFetch('/api/tickets/', {
     method: 'POST',
     body: JSON.stringify(ticketData),
   });

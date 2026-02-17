@@ -11,7 +11,7 @@ echo ""
 
 # Test 1: Create a ticket
 echo "1️⃣ Creating a test ticket..."
-TICKET_RESPONSE=$(curl -s -X POST "$API_URL/tickets/create/" \
+TICKET_RESPONSE=$(curl -s -X POST "$API_URL/tickets/" \
   -H "Content-Type: application/json" \
   -d '{
     "title": "Test ticket from script",
