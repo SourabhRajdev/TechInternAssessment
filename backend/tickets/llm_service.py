@@ -1,8 +1,8 @@
 """
-LLM service for ticket classification using Google Gemini.
+LLM service for ticket classification using OpenAI.
 
 Design decisions:
-- Uses Google Gemini for reliable structured output
+- Uses OpenAI GPT for reliable structured output
 - Implements circuit breaker pattern for graceful degradation
 - Returns None on failure to allow ticket submission without classification
 - Validates LLM output against allowed enums
@@ -17,30 +17,57 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 
-# System prompt for Gemini - designed for reliable structured output
-CLASSIFICATION_PROMPT = """You are a support ticket classification assistant. Your job is to analyze a support ticket description and suggest:
-1. A category (one of: billing, technical, account, general)
-2. A priority level (one of: low, medium, high, critical)
+# System prompt for OpenAI - designed for reliable structured output
+CLASSIFICATION_PROMPT = """You are an automated support ticket classifier for a customer support system.
 
-Category definitions:
-- billing: Payment issues, invoices, refunds, pricing questions
-- technical: Software bugs, errors, performance issues, integration problems
-- account: Login issues, password resets, account settings, permissions
-- general: Questions, feedback, feature requests, other inquiries
+Your task:
+Given a user's support ticket description, you must determine:
+1. The most appropriate category
+2. The most appropriate priority
 
-Priority definitions:
-- low: Minor issues, questions, non-urgent requests
-- medium: Standard issues affecting single user, workarounds available
-- high: Significant issues affecting multiple users or business operations
-- critical: System down, data loss, security issues, blocking all users
+You MUST follow these rules strictly.
 
-You must respond with ONLY a valid JSON object in this exact format:
+ALLOWED CATEGORIES (choose exactly one):
+- billing
+- technical
+- account
+- general
+
+ALLOWED PRIORITIES (choose exactly one):
+- low
+- medium
+- high
+- critical
+
+CATEGORY DEFINITIONS:
+- billing: payment issues, refunds, invoices, charges, subscriptions
+- technical: bugs, errors, crashes, system not working, performance issues
+- account: login problems, password reset, account access, account settings
+- general: questions, feedback, or issues that do not fit above categories
+
+PRIORITY GUIDELINES:
+- low: minor inconvenience, no urgency
+- medium: user impacted but workaround exists
+- high: core functionality broken, user blocked
+- critical: system down, data loss, security risk, business-critical failure
+
+OUTPUT FORMAT RULES (VERY IMPORTANT):
+- Respond with VALID JSON ONLY
+- Do NOT include explanations
+- Do NOT include markdown code blocks
+- Do NOT include extra text
+- Do NOT include trailing commas
+
+Required JSON format:
 {
-  "category": "one of: billing, technical, account, general",
-  "priority": "one of: low, medium, high, critical"
+  "category": "<one of the allowed categories>",
+  "priority": "<one of the allowed priorities>"
 }
 
-Do not include any explanation, markdown formatting, code blocks, or additional text. Only return the raw JSON object."""
+If the description is empty, unclear, or meaningless:
+- Return category = "general"
+- Return priority = "low"
+"""
 
 
 class LLMClassificationService:
@@ -51,44 +78,43 @@ class LLMClassificationService:
     """
     
     def __init__(self):
-        self.model = None
+        self.client = None
         self.enabled = False
-        self.genai = None
+        self.openai = None
         self._initialization_attempted = False
         
     def _lazy_init(self):
-        """Lazy initialization of Gemini - only called when actually needed."""
+        """Lazy initialization of OpenAI - only called when actually needed."""
         if self._initialization_attempted:
             return self.enabled
             
         self._initialization_attempted = True
         
-        # Try to import google.generativeai only when needed
+        # Try to import openai only when needed
         try:
-            import google.generativeai as genai
-            self.genai = genai
+            import openai
+            self.openai = openai
         except (ImportError, TypeError) as e:
-            logger.warning(f"Google Generative AI library not available: {e}. LLM classification disabled.")
+            logger.warning(f"OpenAI library not available: {e}. LLM classification disabled.")
             return False
         
-        api_key = settings.GOOGLE_API_KEY
+        api_key = settings.OPENAI_API_KEY
         if not api_key:
-            logger.warning("GOOGLE_API_KEY not configured. LLM classification disabled.")
+            logger.warning("OPENAI_API_KEY not configured. LLM classification disabled.")
             return False
         
         try:
-            self.genai.configure(api_key=api_key)
-            self.model = self.genai.GenerativeModel('gemini-pro')
+            self.client = self.openai.OpenAI(api_key=api_key)
             self.enabled = True
-            logger.info("LLM classification service initialized successfully with Gemini")
+            logger.info("LLM classification service initialized successfully with OpenAI")
             return True
         except Exception as e:
-            logger.error(f"Failed to initialize Gemini client: {e}")
+            logger.error(f"Failed to initialize OpenAI client: {e}")
             return False
     
     def classify_ticket(self, description: str) -> Optional[Dict[str, str]]:
         """
-        Classify a ticket description using Gemini.
+        Classify a ticket description using OpenAI.
         
         Args:
             description: The ticket description text
@@ -100,7 +126,7 @@ class LLMClassificationService:
         if not self._initialization_attempted:
             self._lazy_init()
             
-        if not self.enabled or not self.model:
+        if not self.enabled or not self.client:
             logger.info("LLM classification not enabled")
             return None
         
@@ -109,22 +135,22 @@ class LLMClassificationService:
             return None
         
         try:
-            # Construct the full prompt
-            full_prompt = f"{CLASSIFICATION_PROMPT}\n\nTicket description:\n{description}"
+            # Construct the full prompt with user description
+            full_prompt = f'{CLASSIFICATION_PROMPT}\n\nNow classify the following support ticket description:\n"""\n{description}\n"""'
             
-            # Call Gemini API
-            response = self.model.generate_content(
-                full_prompt,
-                generation_config={
-                    'temperature': 0,  # Deterministic output
-                    'top_p': 1,
-                    'top_k': 1,
-                    'max_output_tokens': 200,
-                }
+            # Call OpenAI API
+            response = self.client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "You are a support ticket classifier. Respond only with valid JSON."},
+                    {"role": "user", "content": full_prompt}
+                ],
+                temperature=0,  # Deterministic output
+                max_tokens=200,
             )
             
             # Extract response text
-            response_text = response.text.strip()
+            response_text = response.choices[0].message.content.strip()
             logger.info(f"LLM raw response: {response_text}")
             
             # Clean up response - remove markdown code blocks if present

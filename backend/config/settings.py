@@ -116,4 +116,4 @@ CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
 # LLM Configuration
-GOOGLE_API_KEY = os.environ.get('GOOGLE_API_KEY', '')
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
