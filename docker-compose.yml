@@ -26,7 +26,7 @@ services:
       - "8000:8000"
     environment:
       DATABASE_URL: postgresql://ticketuser:ticketpass@db:5432/ticketdb
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
       DEBUG: "True"
     depends_on:
       db:

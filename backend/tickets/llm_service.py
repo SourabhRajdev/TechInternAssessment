@@ -1,8 +1,8 @@
 """
-LLM service for ticket classification using Anthropic Claude.
+LLM service for ticket classification using Google Gemini.
 
 Design decisions:
-- Uses Anthropic Claude for reliable structured output
+- Uses Google Gemini for reliable structured output
 - Implements circuit breaker pattern for graceful degradation
 - Returns None on failure to allow ticket submission without classification
 - Validates LLM output against allowed enums
@@ -15,16 +15,16 @@ from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
-# Lazy import to avoid startup errors if anthropic not installed
+# Lazy import to avoid startup errors if google-generativeai not installed
 try:
-    from anthropic import Anthropic, APIError, APITimeoutError
-    ANTHROPIC_AVAILABLE = True
+    import google.generativeai as genai
+    GEMINI_AVAILABLE = True
 except ImportError:
-    ANTHROPIC_AVAILABLE = False
-    logger.warning("Anthropic library not available. LLM classification will be disabled.")
+    GEMINI_AVAILABLE = False
+    logger.warning("Google Generative AI library not available. LLM classification will be disabled.")
 
 
-# System prompt for Claude - designed for reliable structured output
+# System prompt for Gemini - designed for reliable structured output
 CLASSIFICATION_PROMPT = """You are a support ticket classification assistant. Your job is to analyze a support ticket description and suggest:
 1. A category (one of: billing, technical, account, general)
 2. A priority level (one of: low, medium, high, critical)
@@ -47,7 +47,7 @@ You must respond with ONLY a valid JSON object in this exact format:
   "priority": "one of: low, medium, high, critical"
 }
 
-Do not include any explanation, markdown formatting, or additional text. Only return the JSON object."""
+Do not include any explanation, markdown formatting, code blocks, or additional text. Only return the raw JSON object."""
 
 
 class LLMClassificationService:
@@ -57,28 +57,29 @@ class LLMClassificationService:
     """
     
     def __init__(self):
-        self.client = None
+        self.model = None
         self.enabled = False
         
-        if not ANTHROPIC_AVAILABLE:
-            logger.warning("Anthropic library not available")
+        if not GEMINI_AVAILABLE:
+            logger.warning("Google Generative AI library not available")
             return
         
-        api_key = settings.ANTHROPIC_API_KEY
+        api_key = settings.GOOGLE_API_KEY
         if not api_key:
-            logger.warning("ANTHROPIC_API_KEY not configured. LLM classification disabled.")
+            logger.warning("GOOGLE_API_KEY not configured. LLM classification disabled.")
             return
         
         try:
-            self.client = Anthropic(api_key=api_key)
+            genai.configure(api_key=api_key)
+            self.model = genai.GenerativeModel('gemini-pro')
             self.enabled = True
-            logger.info("LLM classification service initialized successfully")
+            logger.info("LLM classification service initialized successfully with Gemini")
         except Exception as e:
-            logger.error(f"Failed to initialize Anthropic client: {e}")
+            logger.error(f"Failed to initialize Gemini client: {e}")
     
     def classify_ticket(self, description: str) -> Optional[Dict[str, str]]:
         """
-        Classify a ticket description using Claude.
+        Classify a ticket description using Gemini.
         
         Args:
             description: The ticket description text
@@ -86,7 +87,7 @@ class LLMClassificationService:
         Returns:
             Dict with 'suggested_category' and 'suggested_priority', or None on failure
         """
-        if not self.enabled or not self.client:
+        if not self.enabled or not self.model:
             logger.info("LLM classification not enabled")
             return None
         
@@ -95,22 +96,34 @@ class LLMClassificationService:
             return None
         
         try:
-            # Call Claude API with structured prompt
-            message = self.client.messages.create(
-                model="claude-3-5-sonnet-20241022",
-                max_tokens=200,
-                temperature=0,  # Deterministic output for classification
-                messages=[
-                    {
-                        "role": "user",
-                        "content": f"{CLASSIFICATION_PROMPT}\n\nTicket description:\n{description}"
-                    }
-                ]
+            # Construct the full prompt
+            full_prompt = f"{CLASSIFICATION_PROMPT}\n\nTicket description:\n{description}"
+            
+            # Call Gemini API
+            response = self.model.generate_content(
+                full_prompt,
+                generation_config={
+                    'temperature': 0,  # Deterministic output
+                    'top_p': 1,
+                    'top_k': 1,
+                    'max_output_tokens': 200,
+                }
             )
             
             # Extract response text
-            response_text = message.content[0].text.strip()
+            response_text = response.text.strip()
             logger.info(f"LLM raw response: {response_text}")
+            
+            # Clean up response - remove markdown code blocks if present
+            if response_text.startswith('```'):
+                # Remove markdown code blocks
+                lines = response_text.split('\n')
+                cleaned_lines = [line for line in lines if not line.startswith('```')]
+                response_text = '\n'.join(cleaned_lines).strip()
+            
+            # Remove 'json' prefix if present
+            if response_text.lower().startswith('json'):
+                response_text = response_text[4:].strip()
             
             # Parse JSON response
             try:
@@ -144,14 +157,6 @@ class LLMClassificationService:
                 'suggested_category': category,
                 'suggested_priority': priority,
             }
-        
-        except APITimeoutError as e:
-            logger.error(f"LLM API timeout: {e}")
-            return None
-        
-        except APIError as e:
-            logger.error(f"LLM API error: {e}")
-            return None
         
         except Exception as e:
             logger.error(f"Unexpected error during LLM classification: {e}", exc_info=True)

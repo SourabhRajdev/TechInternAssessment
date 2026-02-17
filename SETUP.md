@@ -2,21 +2,20 @@
 
 ## Prerequisites
 - Docker Desktop installed and running
-- Anthropic API key (free tier available at https://console.anthropic.com/)
+- Google Gemini API key (free tier available at https://makersuite.google.com/app/apikey)
 
 ## Setup Steps
 
 1. **Get an API Key**
-   - Visit https://console.anthropic.com/
-   - Sign up or log in
-   - Navigate to API Keys section
-   - Create a new API key
-   - Copy the key (you won't be able to see it again)
+   - Visit https://makersuite.google.com/app/apikey
+   - Sign in with your Google account
+   - Click "Create API Key"
+   - Copy the key (save it securely)
 
 2. **Configure Environment**
    ```bash
    # Create .env file in project root
-   echo "ANTHROPIC_API_KEY=your_actual_key_here" > .env
+   echo "GOOGLE_API_KEY=your_actual_key_here" > .env
    ```
 
 3. **Start the Application**

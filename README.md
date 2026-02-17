@@ -11,7 +11,7 @@ This system allows users to submit support tickets, browse and filter them, and 
 ### Backend
 - **Framework**: Django 4.2 + Django REST Framework
 - **Database**: PostgreSQL 15 with database-level constraint enforcement
-- **LLM**: Anthropic Claude 3.5 Sonnet
+- **LLM**: Google Gemini Pro
 - **Key Features**:
   - RESTful API with comprehensive filtering
   - Database-level aggregation for statistics (no Python loops)
@@ -36,7 +36,7 @@ This system allows users to submit support tickets, browse and filter them, and 
 
 ### Prerequisites
 - Docker and Docker Compose installed
-- Anthropic API key (get one at https://console.anthropic.com/)
+- Google Gemini API key (get one at https://makersuite.google.com/app/apikey)
 
 ### Setup
 
@@ -50,7 +50,7 @@ This system allows users to submit support tickets, browse and filter them, and 
    
    Create a `.env` file in the root directory:
    ```bash
-   ANTHROPIC_API_KEY=your_api_key_here
+   GOOGLE_API_KEY=your_api_key_here
    ```
 
 3. **Start the application**
@@ -111,26 +111,28 @@ Example: `/api/tickets/?category=technical&priority=high&status=open`
 
 ## 🤖 LLM Integration
 
-### Why Anthropic Claude?
+### Why Google Gemini?
 
-I chose **Anthropic Claude 3.5 Sonnet** for several production-critical reasons:
+I chose **Google Gemini Pro** for several production-critical reasons:
 
-1. **Structured Output Reliability**: Claude excels at following precise instructions and returning well-formatted JSON, crucial for our classification task.
+1. **Free Tier Availability**: Gemini offers a generous free tier, making it accessible for development and testing without immediate costs.
 
-2. **Instruction Following**: The model consistently respects constraints (e.g., only returning allowed enum values), reducing parsing errors.
+2. **Structured Output Quality**: Gemini Pro excels at following precise instructions and returning well-formatted JSON, crucial for our classification task.
 
-3. **Low Latency**: Claude's response times are suitable for real-time user interactions with proper debouncing.
+3. **Fast Response Times**: Gemini's response times are excellent for real-time user interactions with proper debouncing.
 
-4. **Error Handling**: The Anthropic API provides clear error messages and status codes, enabling robust error handling.
+4. **Google Infrastructure**: Built on Google's proven infrastructure with high reliability and uptime.
 
-5. **Production Stability**: Anthropic's infrastructure has proven reliability for production workloads.
+5. **Easy Integration**: The google-generativeai Python library provides a clean, simple API for integration.
+
+6. **Cost Effective**: For production workloads, Gemini offers competitive pricing compared to other LLM providers.
 
 ### How It Works
 
 1. **User Input**: User types a ticket description
 2. **Debouncing**: Frontend waits 1 second after typing stops
 3. **API Call**: Description sent to `/api/tickets/classify/`
-4. **LLM Processing**: Claude analyzes the description using a carefully crafted prompt
+4. **LLM Processing**: Gemini analyzes the description using a carefully crafted prompt
 5. **Validation**: Backend validates the response against allowed enums
 6. **Auto-fill**: Frontend pre-fills category and priority dropdowns
 7. **User Override**: User can accept or change the suggestions
@@ -279,7 +281,7 @@ src/
 
 ### Environment Variables
 
-- `ANTHROPIC_API_KEY`: Your Anthropic API key
+- `GOOGLE_API_KEY`: Your Google Gemini API key
 - `DATABASE_URL`: PostgreSQL connection string (auto-configured)
 - `DEBUG`: Django debug mode (True in development)
 
